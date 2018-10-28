@@ -22,7 +22,7 @@
  int duration[s in S] = ...; //minutes
  int kms[s in S] = ...;
  int passengers[s in S] = ...;
- int overlapping[s1 in S][s2 in S];
+
  
  // Drivers
  int maxWorkingTime[d in D] = ...; //minutes
@@ -37,6 +37,12 @@
  float cost_km[b in B] = ...;     // euros
  float cost_min[b in B] = ...; // euros
  
+ 
+ 
+   /*********************************************
+ ************  Preprocessed Variables   *********
+ **********************************************/
+  int overlapping[s1 in S][s2 in S]; // preprocessed not INPUT
  
  
   /*********************************************
