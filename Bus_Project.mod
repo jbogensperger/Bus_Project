@@ -1,6 +1,6 @@
 /*********************************************
  * OPL 12.6.0.0 Model
- * Authors: Johannes Bogensperger, Gerard Cegarra Dueñas
+ * Authors: Johannes Bogensperger, Gerard Cegarra Duenas
  * Creation Date: 28.10.2018 at 16:52:52
  *********************************************/
  
@@ -56,8 +56,8 @@
  dvar boolean overtime[d in D]; // if a driver is allowed to work overtime or is still doing base minutes
  
 
- dvar int WBM[d in D]; // Driver d working base minutes
- dvar int WEM[d in D]; // Driver d working extra minutes
+ dvar int+ WBM[d in D]; // Driver d working base minutes
+ dvar int+ WEM[d in D]; // Driver d working extra minutes
  
  
   
@@ -68,9 +68,12 @@
  execute {
  for (var s1 in S)
  	for (var s2 in S) 
- 		if (start[s1] <= (start[s2]+duration[s2])  && (start[s1]+duration[s1]) >= start[s2]  ){ 
- 			overlapping[s1][s2] = 1; 
- 	}	
+ 		if (start[s1] < (start[s2]+duration[s2]) && (start[s1]+duration[s1]) > start[s2]  ){ 
+ 			overlapping[s1][s2] = 1;  			
+ 		} 
+ 		else {
+ 		 	overlapping[s1][s2] = 0;
+ 		}
 }	 
  
  
@@ -86,31 +89,30 @@
  subject to {
   
   	forall(s in S){
- 		 	sum(d in D) ds[d][s] == 1; // Each Line s must have exactly one driver
- 		 	sum(b in B) bs[b][s] == 1; // Each Line s must have exactly one Bus.
-	 	}
-	 	
+	 	sum(d in D) ds[d][s] == 1; // Each Line s must have exactly one driver
+	 	sum(b in B) bs[b][s] == 1; // Each Line s must have exactly one Bus.
+ 	}
+ 	
 	forall(s in S)
 	  forall(b in B)
 	    capacity[b] >= bs[b][s] * passengers[s]; // capacity must be bigger than the passengers of the service
 	    
 	forall(s1 in S) // Every driver/bus is only allowed to be used in max one service of the overlapping 
-	  forall(s2 in S: overlapping[s1][s2] == 1){ // service pairs
+	  forall(s2 in S: s1 != s2 && overlapping[s1][s2] == 1 ){ // service pairs
 	  		forall(b in B) bs[b][s1] + bs[b][s2] <= 1; 
 	  		forall(d in D) ds[d][s1] + ds[d][s2] <= 1;
 	  }
 	  
 	forall(d in D){
 		WBM[d] + WEM[d] <= 	maxWorkingTime[d]; // Ensure maximum working time for each driver
-		WBM[d] + WEM[d] >= sum(s in S) ds[d][s] * duration[s]; // Ensure the driver works enough for all services he operates
+		WBM[d] + WEM[d] == sum(s in S) ds[d][s] * duration[s]; // Ensure the driver works enough for all services he operates
 		WBM[d] <= BM; // Driver is only receiving CBM until the BM.. therfor WBM is not allowed to be bigger 
 	}
 	
 	forall(d in D){ // Overime allowed or not..
-		WBM[d] >= BM * overtime[d];
-		WEM[d] <= maxWorkingTime[d] * overtime[d];
+		WBM[d] == BM * overtime[d];
+		WEM[d] <= (maxWorkingTime[d] - BM) * overtime[d];
 	}
-	
 	
 	sum(b in B) used[b] <= maxBuses; // maximum amount of buses used
 	
