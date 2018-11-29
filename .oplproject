@@ -4,7 +4,7 @@
 		<config category="opl" default="true" name="Test_with_examdata">
 			<ref name="Bus_Project.mod" type="model">
 			</ref>
-			<ref name="examen.dat" type="data">
+			<ref name="InstanceGenerator/instances/example_4.dat" type="data">
 			</ref>
 		</config>
 	</configs>
