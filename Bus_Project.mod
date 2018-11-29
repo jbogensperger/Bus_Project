@@ -68,7 +68,7 @@
  execute {
  for (var s1 in S)
  	for (var s2 in S) 
- 		if (start[s1] < (start[s2]+duration[s2]) && (start[s1]+duration[s1]) > start[s2]  ){ 
+ 		if (start[s1] < (start[s2]+duration[s2]) && (start[s1]+duration[s1]) > start[s2]){ 
  			overlapping[s1][s2] = 1;  			
  		} 
  		else {
@@ -119,9 +119,7 @@
 	forall(b in B){ // ensuring that used is set when a bus is used..
 		used[b] * nServices >= sum(s in S) bs[b][s];
 		sum(s in S) bs[b][s] >= used[b];
-	}
-
-	 	
+	}	 	
  }
  
  

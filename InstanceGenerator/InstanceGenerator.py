@@ -30,17 +30,17 @@ class InstanceGenerator(object):
         fileNameExtension = self.config.fileNameExtension
         numInstances = self.config.numInstances
         
-        numCPUs = self.config.numCPUs
-        minNumCoresPerCPU = self.config.minNumCoresPerCPU
-        maxNumCoresPerCPU = self.config.maxNumCoresPerCPU
-        minCapacityPerCore = self.config.minCapacityPerCore
-        maxCapacityPerCore = self.config.maxCapacityPerCore
-        
-        numTasks = self.config.numTasks
-        minNumThreadsPerTask = self.config.minNumThreadsPerTask
-        maxNumThreadsPerTask = self.config.maxNumThreadsPerTask
-        minResourcesPerThread = self.config.minResourcesPerThread
-        maxResourcesPerThread = self.config.maxResourcesPerThread
+        nDrivers = self.config.nDrivers
+
+        nBuses = self.config.nBuses
+        minCapacity = self.config.minCapacity
+        maxCapacity = self.config.maxCapacity
+
+        nServices = self.config.nServices
+        minDuration = self.config.minDuration
+        maxDuration = self.config.maxDuration
+        minPassengers = self.config.minPassengers
+        maxPassengers = self.config.maxPassengers
 
         if(not os.path.isdir(instancesDirectory)):
             raise Exception('Directory(%s) does not exist' % instancesDirectory)
@@ -49,68 +49,65 @@ class InstanceGenerator(object):
             instancePath = os.path.join(instancesDirectory, '%s_%d.%s' % (fileNamePrefix, i, fileNameExtension))
             fInstance = open(instancePath, 'w')
 
-            numCores = 0
-            firstCoreIdPerCPU = []
-            numCoresPerCPU = []
-            coreCapacityPerCPU = []
-            for c in xrange(0, numCPUs):
-                numCPUCores = random.randint(minNumCoresPerCPU, maxNumCoresPerCPU)
-                coreCapacity = random.uniform(minCapacityPerCore, maxCapacityPerCore)
-                firstCoreId = numCores
-                firstCoreIdPerCPU.append(firstCoreId)
-                numCoresPerCPU.append(numCPUCores)
-                coreCapacityPerCPU.append(coreCapacity)
-                numCores += numCPUCores
+            durations = [];
+            starts = [];
+            kms = [];
+            passengers = [];
+            for service in xrange(0, nServices):
+                start = random.randint(0, 24 * 60) # one day services
+                starts.append(start)
+
+                duration = random.randint(minDuration, maxDuration)
+                durations.append(duration)
+
+                km = random.randint(duration, duration * 2) # 60km/h <-> 120km/h
+                kms.append(km)
+
+                passenger = random.randint(minPassengers, maxPassengers)
+                passengers.append(passenger)
             
-            numThreads = 0
-            firstThreadIdPerTask = []
-            numThreadsPerTask = []
-            resourcesPerThread = []
-            for t in xrange(0, numTasks):
-                numTaskThreads = random.randint(minNumThreadsPerTask, maxNumThreadsPerTask)
-                firstThreadId = numThreads
-                firstThreadIdPerTask.append(firstThreadId)
-                numThreadsPerTask.append(numTaskThreads)
-                for h in xrange(0, numTaskThreads):
-                    resources = random.uniform(minResourcesPerThread, maxResourcesPerThread)
-                    resourcesPerThread.append(resources)
-                numThreads += numTaskThreads
-            
-            fInstance.write('nTasks=%d;\n' % numTasks)
-            fInstance.write('nThreads=%d;\n' % numThreads)
-            fInstance.write('nCPUs=%d;\n' % numCPUs)
-            fInstance.write('nCores=%d;\n' % numCores)
-            
-            # translate vector of floats into vector of strings and concatenate that strings separating them by a single space character
-            fInstance.write('rh=[%s];\n' % (' '.join(map(str, resourcesPerThread))))
-            fInstance.write('rc=[%s];\n' % (' '.join(map(str, coreCapacityPerCPU))))
-            
-            fInstance.write('CK=[\n')
-            for c in xrange(0, numCPUs):
-                cores = [0] * numCores # create a vector of 0's with numCores elements
-                firstCoreId = firstCoreIdPerCPU[c]
-                numCPUCores = numCoresPerCPU[c]
-                
-                # fill appropriate positions with 1's
-                for k in xrange(firstCoreId, firstCoreId + numCPUCores):
-                    cores[k] = 1
-                
-                # translate vector of integers into vector of strings and concatenate that strings separating them by a single space character
-                fInstance.write('\t[%s]\n' % (' '.join(map(str, cores))))
-            fInstance.write('];\n')
-            
-            fInstance.write('TH=[\n')
-            for t in xrange(0, numTasks):
-                threads = [0] * numThreads # create a vector of 0's with numThreads elements
-                firstThreadId = firstThreadIdPerTask[t]
-                numTaskThreads = numThreadsPerTask[t]
-                
-                # fill appropriate positions with 1's
-                for h in xrange(firstThreadId, firstThreadId + numTaskThreads):
-                    threads[h] = 1
-                
-                # translate vector of integers into vector of strings and concatenate that strings separating them by a single space character
-                fInstance.write('\t[%s]\n' % (' '.join(map(str, threads))))
-            fInstance.write('];\n')
+            capacities = []
+            cost_kms = []
+            cost_mins = []
+            for bus in xrange(0, nBuses):
+                capacity = random.randint(minCapacity, maxCapacity)
+                capacities.append(capacity)
+
+                cost_km = random.uniform(0.01, 0.2)
+                cost_kms.append(cost_km)
+
+                cost_min = random.uniform(0.01, 0.2)
+                cost_mins.append(cost_min)
+
+            maxWorkingTimes = []
+            for driver in xrange(0, nDrivers):
+                maxWorkingTime = nServices * random.randint(((minDuration + maxDuration) / 2), maxDuration) / nDrivers # sensible to make instance unresolvable
+                maxWorkingTimes.append(maxWorkingTime)
+
+            maxBuses = nServices * random.randint(((minDuration + maxDuration) / 2), maxDuration) / 24 # sensible to make instance unresolvable
+
+            BM = 200
+            CBM = 0.2
+            CEM = 0.3
+
+            fInstance.write('nDrivers = %d;\n' % nDrivers)
+            fInstance.write('nBuses = %d;\n' % nBuses)
+            fInstance.write('nServices = %d;\n\n' % nServices)
+
+            fInstance.write('start = [%s];\n' % (' '.join(map(str, starts))))
+            fInstance.write('duration = [%s];\n' % (' '.join(map(str, durations))))
+            fInstance.write('kms = [%s];\n' % (' '.join(map(str, kms))))
+            fInstance.write('passengers = [%s];\n\n' % (' '.join(map(str, passengers))))
+
+            fInstance.write('capacity = [%s];\n' % (' '.join(map(str, capacities))))
+            fInstance.write('cost_km = [%s];\n' % (' '.join(map(str, cost_kms))))
+            fInstance.write('cost_min = [%s];\n\n' % (' '.join(map(str, cost_mins))))
+
+            fInstance.write('maxWorkingTime = [%s];\n' % (' '.join(map(str, maxWorkingTimes))))
+            fInstance.write('maxBuses = %d;\n\n' % maxBuses)
+
+            fInstance.write('BM = %s;\n' % str(BM))
+            fInstance.write('CBM = %s;\n' % str(CBM))
+            fInstance.write('CEM = %s;\n' % str(CEM))
 
             fInstance.close()

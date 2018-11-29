@@ -2,16 +2,16 @@
 instancesDirectory = instances;
 fileNamePrefix = example;
 fileNameExtension = dat;
-numInstances = 1;
+numInstances = 10;
 
-numCPUs = 7;
-minNumCoresPerCPU = 3;
-maxNumCoresPerCPU = 7;
-minCapacityPerCore = 600;
-maxCapacityPerCore = 1000;
+nDrivers = 10;
 
-numTasks = 7;
-minNumThreadsPerTask = 3;
-maxNumThreadsPerTask = 7; 
-minResourcesPerThread = 300;
-maxResourcesPerThread = 1200;
+nBuses = 10;
+minCapacity = 20;
+maxCapacity = 60;
+
+nServices = 25;
+minDuration = 30;
+maxDuration = 200;
+minPassengers = 10;
+maxPassengers = 60;

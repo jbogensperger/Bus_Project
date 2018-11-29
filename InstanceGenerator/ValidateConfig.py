@@ -22,9 +22,8 @@ class ValidateConfig(object):
     @staticmethod
     def validate(data):
         # Validate that mandatory input parameters were found
-        for paramName in ['instancesDirectory', 'fileNamePrefix', 'fileNameExtension', 'numInstances',
-                          'numCPUs', 'minNumCoresPerCPU', 'maxNumCoresPerCPU', 'minCapacityPerCore', 'maxCapacityPerCore',
-                          'numTasks', 'minNumThreadsPerTask', 'maxNumThreadsPerTask', 'minResourcesPerThread', 'maxResourcesPerThread']:
+        for paramName in ['instancesDirectory', 'fileNamePrefix', 'fileNameExtension', 'numInstances', 
+                            'nDrivers', 'nBuses', 'minCapacity', 'maxCapacity', 'nServices', 'minDuration', 'maxDuration', 'minPassengers', 'maxPassengers']:
             if(not data.__dict__.has_key(paramName)):
                 raise Exception('Parameter(%s) not contained in Configuration' % str(paramName))
         
@@ -41,42 +40,34 @@ class ValidateConfig(object):
         if(not isinstance(numInstances, (int, long)) or (numInstances <= 0)):
             raise Exception('numInstances(%s) has to be a positive integer value.' % str(numInstances))
 
-        numCPUs = data.numCPUs
-        if(not isinstance(numCPUs, (int, long)) or (numCPUs <= 0)):
-            raise Exception('numCPUs(%s) has to be a positive integer value.' % str(numCPUs))
+        nDrivers = data.nDrivers
+        if(not isinstance(nDrivers, (int, long)) or (nDrivers <= 0)):
+            raise Exception('nDrivers(%s) has to be a positive integer value.' % str(nDrivers))
 
-        minNumCoresPerCPU = data.minNumCoresPerCPU
-        if(not isinstance(minNumCoresPerCPU, (int, long)) or (minNumCoresPerCPU <= 0)):
-            raise Exception('minNumCoresPerCPU(%s) has to be a positive integer value.' % str(minNumCoresPerCPU))
+        nBuses = data.nBuses
+        if(not isinstance(nBuses, (int, long)) or (nBuses <= 0)):
+            raise Exception('nBuses(%s) has to be a positive integer value.' % str(nBuses))
 
-        maxNumCoresPerCPU = data.maxNumCoresPerCPU
-        if(not isinstance(maxNumCoresPerCPU, (int, long)) or (maxNumCoresPerCPU <= 0)):
-            raise Exception('maxNumCoresPerCPU(%s) has to be a positive integer value.' % str(maxNumCoresPerCPU))
+        minCapacity = data.minCapacity
+        if(not isinstance(minCapacity, (int, long)) or (minCapacity <= 0)):
+            raise Exception('minCapacity(%s) has to be a positive integer value.' % str(minCapacity))
 
-        minCapacityPerCore = data.minCapacityPerCore
-        if(not isinstance(minCapacityPerCore, (int, long, float)) or (minCapacityPerCore <= 0)):
-            raise Exception('minCapacityPerCore(%s) has to be a positive float value.' % str(minCapacityPerCore))
+        maxCapacity = data.maxCapacity
+        if(not isinstance(maxCapacity, (int, long)) or (maxCapacity <= 0)):
+            raise Exception('maxCapacity(%s) has to be a positive integer value.' % str(maxCapacity))
 
-        maxCapacityPerCore = data.maxCapacityPerCore
-        if(not isinstance(maxCapacityPerCore, (int, long, float)) or (maxCapacityPerCore <= 0)):
-            raise Exception('maxCapacityPerCore(%s) has to be a positive float value.' % str(maxCapacityPerCore))
+        nServices = data.nServices
+        if(not isinstance(nServices, (int, long)) or (nServices <= 0)):
+            raise Exception('nServices(%s) has to be a positive integer value.' % str(nServices))
 
-        numTasks = data.numTasks
-        if(not isinstance(numTasks, (int, long)) or (numTasks <= 0)):
-            raise Exception('numTasks(%s) has to be a positive integer value.' % str(numTasks))
+        minDuration = data.minDuration
+        if(not isinstance(minDuration, (int, long)) or (minDuration <= 0)):
+            raise Exception('minDuration(%s) has to be a positive integer value.' % str(minDuration))
 
-        minNumThreadsPerTask = data.minNumThreadsPerTask
-        if(not isinstance(minNumThreadsPerTask, (int, long)) or (minNumThreadsPerTask <= 0)):
-            raise Exception('minNumThreadsPerTask(%s) has to be a positive integer value.' % str(minNumThreadsPerTask))
+        minPassengers = data.minPassengers
+        if(not isinstance(minPassengers, (int, long)) or (minPassengers <= 0)):
+            raise Exception('minPassengers(%s) has to be a positive integer value.' % str(minPassengers))
 
-        maxNumThreadsPerTask = data.maxNumThreadsPerTask
-        if(not isinstance(maxNumThreadsPerTask, (int, long)) or (maxNumThreadsPerTask <= 0)):
-            raise Exception('maxNumThreadsPerTask(%s) has to be a positive integer value.' % str(maxNumThreadsPerTask))
-
-        minResourcesPerThread = data.minResourcesPerThread
-        if(not isinstance(minResourcesPerThread, (int, long, float)) or (minResourcesPerThread <= 0)):
-            raise Exception('minResourcesPerThread(%s) has to be a positive float value.' % str(minResourcesPerThread))
-
-        maxResourcesPerThread = data.maxResourcesPerThread
-        if(not isinstance(maxResourcesPerThread, (int, long, float)) or (maxResourcesPerThread <= 0)):
-            raise Exception('maxResourcesPerThread(%s) has to be a positive float value.' % str(maxResourcesPerThread))
+        maxPassengers = data.maxPassengers
+        if(not isinstance(maxPassengers, (int, long)) or (maxPassengers <= 0)):
+            raise Exception('maxPassengers(%s) has to be a positive integer value.' % str(maxPassengers))
