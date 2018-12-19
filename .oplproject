@@ -4,7 +4,17 @@
 		<config category="opl" default="true" name="Test_with_examdata">
 			<ref name="Bus_Project.mod" type="model">
 			</ref>
-			<ref name="InstanceGenerator/instances/example_4.dat" type="data">
+			<ref name="InstanceGenerator/instances/example_8.dat" type="data">
+			</ref>
+		</config>
+		<config category="opl" default="false" name="Variable_Config">
+			<ref name="main.mod" type="model">
+			</ref>
+		</config>
+		<config category="opl" default="false" name="Test">
+			<ref name="Bus_Project.mod" type="model">
+			</ref>
+			<ref name="InstanceGenerator/instances/example_2.dat" type="data">
 			</ref>
 		</config>
 	</configs>

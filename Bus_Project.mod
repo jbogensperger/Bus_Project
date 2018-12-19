@@ -128,6 +128,48 @@
  **********************************************/
  
   execute {
-// TODO 	
-}	
+    
+  	 writeln("Bus per Service:");
+	 for (var b in B){
+	  	for(var s in S){
+	  	  	write(bs[b][s] );
+	  	  	write(" ");
+	  	}  
+	  	writeln("");
+	  }
+	  writeln("Driver per Service:");
+	  for (var d in D){
+	  	for(var s in S){
+	  	  	write(bs[d][s] );
+	  	  	write(" ");
+	  	}  
+	  	writeln("");
+	  }
+	  writeln("used:");
+	  for (var s in S){
+	  	write(used[b]);
+	  	write(" ");	  
+	  }
+	  writeln(" ");
+	  writeln("overtime:");
+	  for (var d in D){
+	  	write(overtime[d]);
+	  	write(" ");	  
+	  }
+	  writeln(" ");
+	  writeln("WBM:");
+	  for (var d in D){
+	  	write(WBM[d]);
+	  	write(" ");	  
+	  }
+	  writeln(" ");
+	  writeln("WEM:");
+	  for (var d in D){
+	  	write(WEM[d]);
+	  	write(" ");	  
+	  }
+	  writeln(" ");
+  }
+  
+	
  
