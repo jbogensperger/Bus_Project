@@ -23,5 +23,5 @@ export PATH=$PATH:'/opt/ibm/ILOG/CPLEX_Studio126/opl/bin/x86-64_linux/'
 From the project root, run oplrun. It gets the model and the data file as parameters:
 
 ```bash
-oplrun Bus_Project.mod InstanceGenerator/instances/example_0.dat
+oplrun OPL/Bus_Project.mod InstanceGenerator/instances/example_0.dat
 ```
