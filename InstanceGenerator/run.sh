@@ -18,3 +18,4 @@
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 python Main.py config/example.dat
+sleep 5s

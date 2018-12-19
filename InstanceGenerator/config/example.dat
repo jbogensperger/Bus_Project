@@ -4,13 +4,13 @@ fileNamePrefix = example;
 fileNameExtension = dat;
 numInstances = 10;
 
-nDrivers = 10;
+nDrivers = 165;
 
-nBuses = 10;
+nBuses = 165;
 minCapacity = 20;
 maxCapacity = 60;
 
-nServices = 25;
+nServices = 395;
 minDuration = 30;
 maxDuration = 200;
 minPassengers = 10;

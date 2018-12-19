@@ -81,8 +81,8 @@ class InstanceGenerator(object):
 
             maxWorkingTimes = []
             for driver in xrange(0, nDrivers):
-                maxWorkingTime = nServices * random.randint(((minDuration + maxDuration) / 2), maxDuration) / nDrivers # sensible to make instance unresolvable
-                maxWorkingTimes.append(maxWorkingTime)
+                maxWorkingTime = nServices * random.randint(((minDuration + maxDuration) / 2), round(maxDuration * 1.25)) / nDrivers  # sensible to make instance unresolvable!!!!!! CHANGE JOHANNES!!!!!!! Added 25% to maxDuration
+                maxWorkingTimes.append(maxWorkingTime) 
 
             maxBuses = nServices * random.randint(((minDuration + maxDuration) / 2), maxDuration) / 24 # sensible to make instance unresolvable
 
