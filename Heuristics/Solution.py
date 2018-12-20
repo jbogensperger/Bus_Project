@@ -39,6 +39,13 @@ class Solution(Problem):
 
     def __init__(self, inputData):
         super(Solution, self).__init__(inputData)
+
+        ############### NEW STUFF ###############
+        self.bs = {}
+        self.ds = {}
+
+
+        ############### OLD Stuff ###############
         
         self.taskIdToCPUId = {}             # hash table: task Id => CPU Id
         self.cpuIdToListTaskId = {}         # hash table: CPU Id => list<task Id>

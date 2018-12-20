@@ -20,10 +20,59 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from Task import Task
 from CPU import CPU
 
+from Bus import Bus
+from Driver import Driver
+from Service import Service
+
+
 class Problem(object):
     def __init__(self, inputData):
         self.inputData = inputData
+
+        nBuses = self.inputData.nBuses;
+        nDrivers = self.inputData.nDrivers;
+        nServices = self.inputData.nServices;
+
+        start = self.inputData.start
+        duration = self.inputData.duration
+        kms = self.inputData.kms
+        passengers = self.inputData.passengers
+
+        capacity = self.inputData.capacity
+        cost_km = self.inputData.cost_km
+        cost_min = self.inputData.cost_min
+
+        maxWorkingTime = self.inputData.maxWorkingTime
+
+        self.maxBuses = self.inputData.maxBuses
+        self.BM = self.inputData.BM
+        self.CBM = self.inputData.CBM
+        self.CEM = self.inputData.CEM
+
+        self.drivers = []
+        self.buses = []
+        self.services = []
+        self.overlapping = [[0 for x in range(nServices)] for y in range(nServices)] 
+
+        for sId in xrange(0, nServices): #hopefully really 0..(nServices-1) --> Check that
+            service = Service(sId, start[sId], duration[sId], kms[sId], passengers[sId])
+            self.services.append(service)
+
+        for dId in xrange(0, nDrivers): 
+            driver = Driver(dId, maxWorkingTime[dId])
+
+        for bId in xrange(0, nBuses):
+            bus = Bus(bId, capacity[bId], cost_km[bId], cost_min[bId])
+
+        for s1 in xrange(0, nServices-1):
+            for s2 in xrange(0, nServices-1):
+                if self.services[s1].getStart() < (self.services[s2].getStart() + self.services[s1].getDuration()) and (self.services[s1].getStart() + self.services[s1].getDuration()) > self.services[s2].getStart():
+                    self.overlapping[s1][s2] = 1
+                else:
+                    self.overlapping[s1][s2] = 0
+
         
+        ######### OLD STuff #########
         nTasks = self.inputData.nTasks
         nThreads = self.inputData.nThreads
         nCPUs = self.inputData.nCPUs
@@ -59,40 +108,34 @@ class Problem(object):
                     self.maxCapacityPerCoreId[kId] = capacity
             self.cpus.append(cpu)
 
+
+    ######### NEW STuff #########
+    def getDrivers(self):
+        return(self.drivers)
+    def getBuses(self):
+        return(self.buses)
+    def getServices(self):
+        return(self.services)
+    def getMaxBuses(self):
+        return(self.maxBuses)
+    def getBM(self):
+        return(self.BM)
+    def getCBM(self):
+        return(self.CBM)
+    def getCEM(self):
+        return(self.CEM)
+
+
+
+
+    ######### DELETE BELOW #########
     def getTasks(self):
         return(self.tasks)
 
     def getCPUs(self):
         return(self.cpus)
 
+
+    ######### Check the instance if feasible --> return true (We don't need to implement that, our problems will be solveable) ###
     def checkInstance(self):
-        totalCapacityCPUs = 0.0
-        maxCoreCapacity = 0.0
-        for cpu in self.cpus:
-            capacity = cpu.getTotalCapacity()
-            totalCapacityCPUs += capacity
-            for coreId in cpu.getCoreIds():
-                capacity = cpu.getTotalCapacityByCore(coreId)
-                maxCoreCapacity = max(maxCoreCapacity, capacity)
-                
-        totalResourcesTasks = 0.0
-        for task in self.tasks:
-            resources = task.getTotalResources()
-            totalResourcesTasks += resources
-            
-            threadIds = task.getThreadIds()
-            for threadId in threadIds:
-                threadRes = task.getResourcesByThread(threadId)
-                if(threadRes > maxCoreCapacity): return(False)
-            
-            feasible = False
-            for cpu in self.cpus:
-                capacity = cpu.getTotalCapacity()
-                feasible = (resources < capacity)
-                if(feasible): break
-            
-            if(not feasible): return(False)
-        
-        if(totalCapacityCPUs < totalResourcesTasks): return(False)
-        
         return(True)
