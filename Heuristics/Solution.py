@@ -41,8 +41,21 @@ class Solution(Problem):
         super(Solution, self).__init__(inputData)
 
         ############### NEW STUFF ###############
-        self.bs = {}
-        self.ds = {}
+        self.sb = {}
+        self.sd = {}
+        self.cost = 0.0
+
+        ############### Old, but we will still need that ###############
+        self.feasible = True
+        self.verbose = False
+
+        #maybe needed variables:
+        self.used = []
+        self.WBM = []
+        self.WEM = []
+
+        
+
 
 
         ############### OLD Stuff ###############
@@ -64,9 +77,26 @@ class Solution(Problem):
         # vector of loads per CPU (nCPUs entries initialized to 0.0) 
         self.loadPerCPUId = [0.0] * self.inputData.nCPUs
         
-        self.feasible = True
-        self.verbose = False
-    
+
+    #############   NEW stuff    #############
+    def updateCost(self):
+        newCost = 0.0
+        #TALK with Geri about implementation about Maps / vs [][] / normal array
+        for wMin in self.WBM:
+            newCost += self.CBM * wMin
+        for wMin in self.WEM:
+            newCost += self.CEM * wMin
+        for service in self.services:
+            assignBus = self.sb[service.getId]
+            newCost += service.getDuration() * assignBus.getCost_min() + service.getKms() * assignBus.getCost_km() 
+        self.cost = newCost
+
+
+    def getCost(self):
+        self.updateCost()
+        return (self.cost)
+        
+    ####### Still Needed ##############
     def setVerbose(self, verbose):
         if(not isinstance(verbose, (bool)) or (verbose not in [True, False])):
             raise Exception('verbose(%s) has to be a boolean value.' % str(verbose))
@@ -78,7 +108,10 @@ class Solution(Problem):
     
     def isFeasible(self):
         return(self.feasible)
+
+
     
+    ####### OLD Stuff ##############
     def updateHighestLoad(self):
         self.highestLoad = 0.0
         for cpu in self.cpus:

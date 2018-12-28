@@ -81,6 +81,8 @@ class Solver_GRASP(Solver):
             
         return(solution, iteration_elapsedEvalTime, iteration_evaluatedCandidates)
     
+
+    
     def solve(self, config, problem):
         bestSolution = Solution.createEmptySolution(config, problem)
         bestSolution.makeInfeasible() 
@@ -133,3 +135,67 @@ class Solver_GRASP(Solver):
         localSearch.printPerformance()
         
         return(bestSolution)
+    
+
+    #######  New solver   ################
+    def solve2(self, config, problem):
+        bestSolution = Solution.createEmptySolution(config, problem)
+        bestSolution.makeInfeasible() 
+        #REPLACE ME WITH COST
+        bestHighestLoad = bestSolution.getHighestLoad()
+        #Yes me above
+        bestCost = bestSolution.getCost()
+
+        self.startTimeMeasure()
+        self.writeLogLine(bestHighestLoad, 0)
+        
+        total_elapsedEvalTime = 0
+        total_evaluatedCandidates = 0
+        
+        #localSearch = LocalSearch(config) ## TODO ADD LOCALSEARCH HERE..
+
+        iteration = 0
+        while(time.time() - self.startTime < config.maxExecTime):
+            iteration += 1
+
+            # force first iteration as a Greedy execution (alpha == 0)
+            originalAlpha = config.alpha 
+            if(iteration == 1): config.alpha = 0
+            
+            solution, it_elapsedEvalTime, it_evaluatedCandidates = self.greedyRandomizedConstruction(config, problem)
+            total_elapsedEvalTime += it_elapsedEvalTime
+            total_evaluatedCandidates += it_evaluatedCandidates
+            
+            # recover original alpha
+            if(iteration == 1): config.alpha = originalAlpha
+            
+            if(not solution.isFeasible()): continue
+            
+            solution = localSearch.run(solution)
+            
+
+            ####### REPLACE ME BY adapted performance measure --> getcost()
+            solutionHighestLoad = solution.getHighestLoad()
+            if(solutionHighestLoad < bestHighestLoad):
+                bestSolution = solution
+                bestHighestLoad = solutionHighestLoad
+                self.writeLogLine(bestHighestLoad, iteration)
+            
+        self.writeLogLine(bestHighestLoad, iteration)
+        
+        avg_evalTimePerCandidate = 0.0
+        if(total_evaluatedCandidates != 0):
+            avg_evalTimePerCandidate = 1000.0 * total_elapsedEvalTime / float(total_evaluatedCandidates)
+        
+        print ''
+        print 'GRASP Candidate Evaluation Performance:'
+        print '  Num. Candidates Eval.', total_evaluatedCandidates
+        print '  Total Eval. Time     ', total_elapsedEvalTime, 's'
+        print '  Avg. Time / Candidate', avg_evalTimePerCandidate, 'ms'
+        
+        localSearch.printPerformance()
+        
+        return(bestSolution)
+
+
+
