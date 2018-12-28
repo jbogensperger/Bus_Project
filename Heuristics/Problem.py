@@ -60,12 +60,14 @@ class Problem(object):
 
         for dId in xrange(0, nDrivers): 
             driver = Driver(dId, maxWorkingTime[dId])
+            self.drivers.append(driver)
 
         for bId in xrange(0, nBuses):
             bus = Bus(bId, capacity[bId], cost_km[bId], cost_min[bId])
+            self.buses.append(bus)
 
-        for s1 in xrange(0, nServices-1):
-            for s2 in xrange(0, nServices-1):
+        for s1 in xrange(0, nServices):
+            for s2 in xrange(0, nServices):
                 if self.services[s1].getStart() < (self.services[s2].getStart() + self.services[s1].getDuration()) and (self.services[s1].getStart() + self.services[s1].getDuration()) > self.services[s2].getStart():
                     self.overlapping[s1][s2] = 1
                 else:

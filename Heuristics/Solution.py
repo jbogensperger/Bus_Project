@@ -20,17 +20,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import copy, time
 from Problem import Problem
 
+
 # Assignment class stores the load of the highest loaded CPU
 # when a task is assigned to a CPU.  
 class Assignment(object):
-    def __init__(self, taskId, cpuId, highestLoad):
-        self.taskId = taskId
-        self.cpuId = cpuId
-        self.highestLoad = highestLoad
+    def __init__(self, serviceId, assignedId, cost):
+        self.serviceId = serviceId
+        self.id = assignedId
+        self.cost = cost
 
 # Solution includes functions to manage the solution, to perform feasibility
 # checks and to dump the solution into a string or file.
 class Solution(Problem):
+
     @staticmethod
     def createEmptySolution(config, problem):
         solution = Solution(problem.inputData)
@@ -40,48 +42,19 @@ class Solution(Problem):
     def __init__(self, inputData):
         super(Solution, self).__init__(inputData)
 
-        ############### NEW STUFF ###############
         self.sb = {}
         self.sd = {}
         self.cost = 0.0
 
-        ############### Old, but we will still need that ###############
         self.feasible = True
-        self.verbose = False
+        self.verbose = True
 
-        #maybe needed variables:
         self.used = []
-        self.WBM = []
-        self.WEM = []
-
+        self.WBM = [0] * self.inputData.nDrivers
+        self.WEM = [0] * self.inputData.nDrivers
         
-
-
-
-        ############### OLD Stuff ###############
-        
-        self.taskIdToCPUId = {}             # hash table: task Id => CPU Id
-        self.cpuIdToListTaskId = {}         # hash table: CPU Id => list<task Id>
-
-        self.threadIdToCoreId = {}          # hash table: thread Id => core Id
-        self.coreIdToListThreadId = {}      # hash table: core Id => list<thread Id>
-        
-        # vector of available capacities per CPU initialized as a copy of maxCapacityPerCPUId vector.
-        self.availCapacityPerCPUId = copy.deepcopy(self.maxCapacityPerCPUId)
-        
-        # vector of available capacities per core initialized as a copy of maxCapacityPerCoreId vector.
-        self.availCapacityPerCoreId = copy.deepcopy(self.maxCapacityPerCoreId)
-        
-        self.highestLoad = 0.0
-        
-        # vector of loads per CPU (nCPUs entries initialized to 0.0) 
-        self.loadPerCPUId = [0.0] * self.inputData.nCPUs
-        
-
-    #############   NEW stuff    #############
     def updateCost(self):
         newCost = 0.0
-        #TALK with Geri about implementation about Maps / vs [][] / normal array
         for wMin in self.WBM:
             newCost += self.CBM * wMin
         for wMin in self.WEM:
@@ -96,7 +69,6 @@ class Solution(Problem):
         self.updateCost()
         return (self.cost)
         
-    ####### Still Needed ##############
     def setVerbose(self, verbose):
         if(not isinstance(verbose, (bool)) or (verbose not in [True, False])):
             raise Exception('verbose(%s) has to be a boolean value.' % str(verbose))
@@ -104,125 +76,124 @@ class Solution(Problem):
     
     def makeInfeasible(self):
         self.feasible = False
-        self.highestLoad = float('infinity')
+        self.cost = float('infinity')
     
     def isFeasible(self):
         return(self.feasible)
 
+    def getDriverAssignedToService(self, serviceId):
+        if(not self.sd.has_key(serviceId)): return(None)
+        return(self.sd[serviceId])
 
+    def getBusAssignedToService(self, busId):
+        if(not self.sd.has_key(busId)): return(None)
+        return(self.sd[busId])
+
+    def isFeasibleToAssignDriverToService(self, serviceId, driverId):
+        if(self.sd.has_key(serviceId)):
+            if(self.verbose): print('Service(%s) already has a Driver assigned.' % str(serviceId))
+            return(False)
+
+        # check working minutes
+        serviceDuration = self.inputData.duration[serviceId]
+        WM = self.WBM[driverId] + self.WEM[driverId]
+        remainingMinutes = self.inputData.maxWorkingTime - (WM + serviceDuration)
+
+        if remainingMinutes <= 0:
+            if(self.verbose): 
+                print('Driver(%s, worked=%s) does not have enough available time for Service(%s, duration=%s)' % 
+                (str(driverId), str(WM), str(serviceId), str(serviceDuration)))
+            return(False)
     
-    ####### OLD Stuff ##############
-    def updateHighestLoad(self):
-        self.highestLoad = 0.0
-        for cpu in self.cpus:
-            cpuId = cpu.getId()
-            totalCapacity = cpu.getTotalCapacity()
-            availableCapacity = self.availCapacityPerCPUId[cpuId]
-            usedCapacity = totalCapacity - availableCapacity
-            load = usedCapacity / totalCapacity
-            self.loadPerCPUId[cpuId] = load
-            self.highestLoad = max(self.highestLoad, load)
-    
-    def isFeasibleToAssignTaskToCPU(self, taskId, cpuId):
-        if(self.taskIdToCPUId.has_key(taskId)):
-            if(self.verbose): print('Task(%s) already has a CPU assigned.' % str(taskId))
-            return(False)
-        
-        task = self.tasks[taskId]
-        resources = task.getTotalResources()
-        availCapacity = self.availCapacityPerCPUId[cpuId]
-        if(availCapacity < resources):
-            if(self.verbose): print('CPU(%s) does not has enough available capacity for Task(%s)' % (str(cpuId), str(taskId)))
-            return(False)
-        
-        return(True)
+        # check overlapping
+        driverServices = [sId for sId, dId in self.sd.iteritems() if dId == driverId]
 
-    def isFeasibleToAssignThreadToCore(self, taskId, threadId, cpuId, coreId):
-        if(self.threadIdToCoreId.has_key(threadId)):
-            if(self.verbose): print('Thread(%s) already has a Core assigned.' % str(threadId))
-            return(False)
-        
-        task = self.tasks[taskId]
-        resources = task.getResourcesByThread(threadId)
-        availCapacity = self.availCapacityPerCoreId[coreId]
-        if(availCapacity < resources):
-            if(self.verbose): print('Core(%s, capacity=%s) does not has enough available capacity for Thread(%s, resources=%s)' % (str(coreId), str(availCapacity), str(threadId), str(resources)))
-            return(False)
-        
-        return(True)
-
-    def getCPUIdAssignedToTaskId(self, taskId):
-        if(not self.taskIdToCPUId.has_key(taskId)): return(None)
-        return(self.taskIdToCPUId[taskId])
-
-    def getCoreIdAssignedToThreadId(self, threadId):
-        if(not self.threadIdToCoreId.has_key(threadId)): return(None)
-        return(self.threadIdToCoreId[threadId])
-
-    def assign(self, taskId, cpuId):
-        if(not self.isFeasibleToAssignTaskToCPU(taskId, cpuId)):
-            if(self.verbose): print('Unable to assign Task(%s) to CPU(%s)' % (str(taskId), str(cpuId)))
-            return(False)
-
-        task = self.tasks[taskId]
-        taskThreadIds = task.getThreadIds()
-        
-        cpu = self.cpus[cpuId]
-        cpuCoreIds = cpu.getCoreIds()
-        
-        assignment = {}     # hash table threadId => coreId assigned
-
-        for threadId in taskThreadIds:
-            selectedCoreId = None
-            selectedCoreAvailCap = 0
-            for coreId in cpuCoreIds:
-                if(self.isFeasibleToAssignThreadToCore(taskId, threadId, cpuId, coreId)):
-                    coreAvailCap = self.availCapacityPerCoreId[coreId]
-                    if(coreAvailCap > selectedCoreAvailCap):
-                        selectedCoreId = coreId
-                        selectedCoreAvailCap = coreAvailCap
-                else:
-                    if(self.verbose):
-                        print('Unable to assign Thread(%s) belonging to Task(%s) to Core(%s) belonging to CPU(%s)' % (
-                            str(threadId), str(taskId), str(coreId), str(cpuId)))
-            
-            # there is a thread not assigned to any core in this CPU
-            if(selectedCoreId is None):
-                # assignment infeasible.
-                if(self.verbose):
-                    print('Unable to assign Thread(%s) belonging to Task(%s) to a core belonging to CPU(%s)' % (
-                            str(threadId), str(taskId), str(cpuId)))
+        for sId in driverServices:
+            if self.overlapping[serviceId][sId]:
+                if(self.verbose): 
+                    print('Driver(%s) already operates Service(%s) which overlaps with Service(%s)' % 
+                    (str(driverId), str(sId), str(serviceId)))
                 return(False)
-            else:
-                assignment[threadId] = selectedCoreId 
-            
-        # if there is some thread not assigned to a core: not feasible 
-        if(len(assignment) != len(taskThreadIds)):
-            return(False)
 
-        # otherwise: allocate the resources
-        if(self.verbose): print('Assign Task(%s) to CPU(%s)' % (str(taskId), str(cpuId)))
-        self.taskIdToCPUId[taskId] = cpuId
-        if(not self.cpuIdToListTaskId.has_key(cpuId)): self.cpuIdToListTaskId[cpuId] = []
-        self.cpuIdToListTaskId[cpuId].append(taskId)
-
-        for threadId,coreId in assignment.iteritems():  # iterate over the hash table.
-                                                        # each entry is a pair (key<coreId> => value<threadId>)
-            if(self.verbose):
-                print('\tAssign Thread(%s) belonging to Task(%s) to Core(%s) belonging to CPU(%s)' % (
-                        str(threadId), str(taskId), str(coreId), str(cpuId)))
-            
-            self.threadIdToCoreId[threadId] = coreId
-            if(not self.coreIdToListThreadId.has_key(coreId)): self.coreIdToListThreadId[coreId] = []
-            self.coreIdToListThreadId[coreId].append(threadId)
-            task = self.tasks[taskId]
-            resources = task.getResourcesByThread(threadId)
-            self.availCapacityPerCoreId[coreId] -= resources
-            self.availCapacityPerCPUId[cpuId] -= resources
-        
-        self.updateHighestLoad()
         return(True)
 
+    def isFeasibleToAssignBusToService(self, serviceId, busId):
+        if(self.sb.has_key(serviceId)):
+            if(self.verbose): print('Service(%s) already has a Bus assigned.' % str(serviceId))
+            return(False)
+
+        # check max buses
+        nUsedBuses = len(filter(lambda used: used == 1, self.used))
+
+        if nUsedBuses == self.maxBuses and self.used[busId] == 0:
+            if(self.verbose): 
+                print('Bus(%s) cannot be assigned to Service(%s): MAX number of buses already reached' % 
+                (str(busId), str(serviceId)))
+            return(False)
+
+        # check capacity
+        busCapacity = self.inputData.capacity[busId]
+        passengers = self.inputData.passengers[serviceId]
+
+        if busCapacity < passengers:
+            if(self.verbose): 
+                print('Bus(%s, capacity=%s) does not have enough capacity for Service(%s, passengers=%s)' % 
+                (str(busId), str(busCapacity),  str(serviceId), str(passengers))
+            return(False)
+
+        # check overlapping
+        busServices = [sId for sId, bId in self.sb.iteritems() if bId == busId]
+
+        for sId in busServices:
+            if self.overlapping[serviceId][sId]:
+                if(self.verbose): 
+                    print('Bus(%s) already operates Service(%s) which overlaps with Service(%s)' % 
+                    (str(busId), str(sId), str(serviceId)))
+                return(False)
+
+        return(True)
+
+    def assignDriver(self, serviceId, driverId):
+        if(not self.isFeasibleToAssignDriverToService(serviceId, driverId)):
+            if(self.verbose): print('Unable to assign Serivce(%s) to Driver(%s)' % (str(serviceId), str(driverId)))
+            return(False)
+
+        self.sd[serviceId] = driverId
+
+        serviceDuration = self.inputData.duration[serviceId]
+        remainingWBM = self.BM - self.WBM[driverId]
+
+        WBM = min(remainingWBM, serviceDuration)
+        WEM = serviceDuration - WBM
+
+        self.WBM[driverId] += WBM
+        self.WEM[driverId] += WEM
+
+        self.updateCost()
+            
+        return(True)
+
+    def assignBus(self, serviceId, busId):
+        if(not self.isFeasibleToAssignBusToService(serviceId, busId)):
+            if(self.verbose): print('Unable to assign Serivce(%s) to Bus(%s)' % (str(serviceId), str(busId)))
+            return(False)
+
+        self.sb[serviceId] = busId
+        self.used[busId] = 1
+
+        self.updateCost()
+        
+        return(True)
+
+    def isFeasibleToUnassignDriverFromService(self, serviceId, driverId):
+        # TODO implement
+        return(True)
+
+    def isFeasibleToUnassignBusFromService(self, serviceId, busId):
+        # TODO implement
+        return(True)
+
+    # TODO remove
     def isFeasibleToUnassignTaskFromCPU(self, taskId, cpuId):
         if(not self.taskIdToCPUId.has_key(taskId)):
             if(self.verbose): print('Task(%s) is not assigned to any CPU.' % str(taskId))
@@ -238,6 +209,7 @@ class Solution(Problem):
 
         return(True)
 
+    # TODO remove
     def isFeasibleToUnassignThreadFromCore(self, taskId, threadId, cpuId, coreId):
         if(not self.threadIdToCoreId.has_key(threadId)):
             if(self.verbose): print('Thread(%s) does not has a Core assigned.' % str(threadId))
@@ -253,6 +225,15 @@ class Solution(Problem):
         
         return(True)
 
+    def unassignDriver(self, serviceId, driverId):
+        # TODO implement
+        return(True)
+
+    def unassignBus(self, serviceId, busId):
+        # TODO implement
+        return(True)
+
+    # TODO remove
     def unassign(self, taskId, cpuId):
         if(not self.isFeasibleToUnassignTaskFromCPU(taskId, cpuId)):
             if(self.verbose): print('Unable to unassign Task(%s) from CPU(%s)' % (str(taskId), str(cpuId)))
@@ -306,30 +287,48 @@ class Solution(Problem):
 
         self.updateHighestLoad()
         return(True)
-    
-    def getHighestLoad(self):
-        return(self.highestLoad)
-    
-    def findFeasibleAssignments(self, taskId):
+
+    def findFeasibleDrivers(self, serviceId):
         startEvalTime = time.time()
         evaluatedCandidates = 0
         
-        feasibleAssignments = []
-        for cpu in self.cpus:
-            cpuId = cpu.getId()
-            feasible = self.assign(taskId, cpuId)
-            
+        feasibleDrivers = []
+        for driver in self.drivers:
+            driverId = driver.getId()
+            feasible = self.assignDriver(serviceId, driverId)
+
             evaluatedCandidates += 1
             if(not feasible): continue
             
-            assignment = Assignment(taskId, cpuId, self.getHighestLoad())
-            feasibleAssignments.append(assignment)
+            assignment = Assignment(serviceId, driverId, self.getCost())
+            feasibleDrivers.append(assignment)
             
-            self.unassign(taskId, cpuId)
+            self.unassignDriver(serviceId, driverId)
             
         elapsedEvalTime = time.time() - startEvalTime
-        return(feasibleAssignments, elapsedEvalTime, evaluatedCandidates)
+        return(feasibleDrivers, elapsedEvalTime, evaluatedCandidates)
 
+    def findFeasibleBuses(self, serviceId):
+        startEvalTime = time.time()
+        evaluatedCandidates = 0
+        
+        feasibleBuses = []
+        for Bus in self.buses:
+            busId = Bus.getId()
+            feasible = self.assignBus(serviceId, busId)
+
+            evaluatedCandidates += 1
+            if(not feasible): continue
+            
+            assignment = Assignment(serviceId, busId, self.getCost())
+            feasibleBuses.append(assignment)
+            
+            self.unassignBus(serviceId, busId)
+            
+        elapsedEvalTime = time.time() - startEvalTime
+        return(feasibleBuses, elapsedEvalTime, evaluatedCandidates)
+
+    # TODO refactor / remove (needed ?)
     def findBestFeasibleAssignment(self, taskId):
         bestAssignment = Assignment(taskId, None, float('infinity'))
         for cpu in self.cpus:
@@ -346,6 +345,7 @@ class Solution(Problem):
             
         return(bestAssignment)
     
+    # TODO refactor
     def __str__(self):  # toString equivalent
         nTasks = self.inputData.nTasks
         nThreads = self.inputData.nThreads
