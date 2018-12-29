@@ -99,7 +99,7 @@ class Solution(Problem):
         WM = self.WBM[driverId] + self.WEM[driverId]
         remainingMinutes = self.inputData.maxWorkingTime - (WM + serviceDuration)
 
-        if remainingMinutes <= 0:
+        if remainingMinutes < 0:
             if(self.verbose): 
                 print('Driver(%s, worked=%s) does not have enough available time for Service(%s, duration=%s)' % 
                 (str(driverId), str(WM), str(serviceId), str(serviceDuration)))
@@ -137,8 +137,7 @@ class Solution(Problem):
 
         if busCapacity < passengers:
             if(self.verbose): 
-                print('Bus(%s, capacity=%s) does not have enough capacity for Service(%s, passengers=%s)' % 
-                (str(busId), str(busCapacity),  str(serviceId), str(passengers))
+                print('Bus(%s, capacity=%s) does not have enough capacity for Service(%s, passengers=%s)' % str(busId), str(busCapacity),  str(serviceId), str(passengers))
             return(False)
 
         # check overlapping
@@ -186,106 +185,73 @@ class Solution(Problem):
         return(True)
 
     def isFeasibleToUnassignDriverFromService(self, serviceId, driverId):
-        # TODO implement
+        if(not self.sd.has_key(serviceId)):
+            if(self.verbose): print('Unable to unassign Driver(%s) from Service(%s): Service(%s) has no driver assigned' % 
+                str(driverId), str(serviceId), str(serviceId))
+            return(False)
+        
+        if(self.sd[serviceId] != driverId):
+            if(self.verbose): print('Unable to unassign Driver(%s) from Service(%s): Driver(%s) is not assigned to Service(%s)' % 
+                str(driverId), str(serviceId), str(driverId), str(serviceId))
+            return(False)
+
         return(True)
 
     def isFeasibleToUnassignBusFromService(self, serviceId, busId):
-        # TODO implement
+        if(not self.sb.has_key(serviceId)):
+            if(self.verbose): print('Unable to unassign Bus(%s) from Service(%s): Service(%s) has no bus assigned' % 
+                str(busId), str(serviceId), str(serviceId))
+            return(False)
+        
+        if(self.sb[serviceId] != busId):
+            if(self.verbose): print('Unable to unassign Bus(%s) from Service(%s): Bus(%s) is not assigned to Service(%s)' % 
+                str(busId), str(serviceId), str(busId), str(serviceId))
+            return(False)
         return(True)
 
-    # TODO remove
-    def isFeasibleToUnassignTaskFromCPU(self, taskId, cpuId):
-        if(not self.taskIdToCPUId.has_key(taskId)):
-            if(self.verbose): print('Task(%s) is not assigned to any CPU.' % str(taskId))
-            return(False)
-        
-        if(not self.cpuIdToListTaskId.has_key(cpuId)):
-            if(self.verbose): print('CPU(%s) is not used by any Task.' % str(cpuId))
+        if(self.used[busId] == 0):
+            if(self.verbose): print('Unable to unassign Bus(%s) from Service(%s): Bus(%s) is not used' % 
+                str(busId), str(serviceId), str(busId))
             return(False)
 
-        if(taskId not in self.cpuIdToListTaskId[cpuId]):
-            if(self.verbose): print('CPU(%s) is not used by Task(%s).' % (str(cpuId), str(taskId)))
-            return(False)
-
-        return(True)
-
-    # TODO remove
-    def isFeasibleToUnassignThreadFromCore(self, taskId, threadId, cpuId, coreId):
-        if(not self.threadIdToCoreId.has_key(threadId)):
-            if(self.verbose): print('Thread(%s) does not has a Core assigned.' % str(threadId))
-            return(False)
-        
-        task = self.tasks[taskId]
-        resources = task.getResourcesByThread(threadId)
-        availCapacity = self.availCapacityPerCoreId[coreId]
-        maxCapacity = self.maxCapacityPerCoreId[coreId]
-        if((availCapacity + resources) > maxCapacity):
-            if(self.verbose): print('Core(%s) will exceed its maximum capacity after releasing Thread(%s)' % (str(coreId), str(threadId)))
-            return(False)
-        
         return(True)
 
     def unassignDriver(self, serviceId, driverId):
-        # TODO implement
+        if(not self.isFeasibleToUnassignDriverFromService(taskId, cpuId)):
+            if(self.verbose): 
+                print('Unable to unassign Driver(%s) from Service(%s)' % (str(driverId), str(serviceId)))
+            return(False)
+
+        if(self.verbose):
+            print('Unassign Driver(%s) from Service(%s)' % driverId, serviceId)
+
+        del self.sd[serviceId]
+
+        serviceDuration = self.inputData.duration[serviceId]
+        remainingWEM = self.WEM[driverId] - serviceDuration
+
+        self.WEM[driverId] = max(0, remainingWEM)
+        self.WBM[driverId] += min(0, remainingWEM)
+
+        self.updateCost()
         return(True)
 
     def unassignBus(self, serviceId, busId):
-        # TODO implement
-        return(True)
-
-    # TODO remove
-    def unassign(self, taskId, cpuId):
-        if(not self.isFeasibleToUnassignTaskFromCPU(taskId, cpuId)):
-            if(self.verbose): print('Unable to unassign Task(%s) from CPU(%s)' % (str(taskId), str(cpuId)))
+        if(not self.isFeasibleToUnassignBusFromService(serviceId, busId)):
+            if(self.verbose): 
+                print('Unable to unassign Bus(%s) from Service(%s)' % (str(busId), str(serviceId)))
             return(False)
-        
-        task = self.tasks[taskId]
-        taskThreadIds = task.getThreadIds()
-        
-        cpu = self.cpus[cpuId]
 
-        assignment = {}     # hash table threadId => coreId assigned
-        
-        # recover the assignment of threads to cores
-        # check that cores belong to specified CPU
-        for threadId in taskThreadIds:
-            coreId = self.threadIdToCoreId[threadId]
-            if(not cpu.hasCore(coreId)):
-                raise Exception('CoreId(%d) does not belong to CPUId(%d)' % (coreId, cpu.getCPUId()))
-            
-            if(self.isFeasibleToUnassignThreadFromCore(taskId, threadId, cpuId, coreId)):
-                assignment[threadId] = coreId 
-            else:
-                if(self.verbose):
-                    print('Unable to unassign Thread(%s) belonging to Task(%s) to Core(%s) belonging to CPU(%s)' % (
-                        str(threadId), str(taskId), str(coreId), str(cpuId)))
-        
         if(self.verbose):
-            print 'Solution', 'unassign', 'assignment', assignment
-            print 'Solution', 'unassign', 'taskThreadIds', taskThreadIds
-        
-        # if there is some thread not assigned to a core: not feasible 
-        if(len(assignment) != len(taskThreadIds)):
-            return(False)
-        
-        # otherwise: deallocate the resources
-        if(self.verbose): print('Unassign Task(%s) to CPU(%s)' % (str(taskId), str(cpuId)))
-        del self.taskIdToCPUId[taskId]
-        self.cpuIdToListTaskId[cpuId].remove(taskId)
-        
-        for threadId,coreId in assignment.iteritems():  # iterate over the hash table.
-                                                        # each entry is a pair (key<coreId> => value<threadId>)
-            if(self.verbose):
-                print('\tUnassign Thread(%s) belonging to Task(%s) to Core(%s) belonging to CPU(%s)' % (
-                        str(threadId), str(taskId), str(coreId), str(cpuId)))
-            
-            del self.threadIdToCoreId[threadId]
-            self.coreIdToListThreadId[coreId].remove(threadId)
-            resources = task.getResourcesByThread(threadId)
-            self.availCapacityPerCoreId[coreId] += resources
-            self.availCapacityPerCPUId[cpuId] += resources
+            print('Unassign Bus(%s) from Service(%s)' % busId, serviceId)
 
-        self.updateHighestLoad()
+        del self.sb[serviceId]
+
+        busServices = [sId for sId, bId in self.sb.iteritems() if bId == busId]
+        if len(busServices) == 0:
+            self.used[busId] = 0
+
+        self.updateCost()
         return(True)
 
     def findFeasibleDrivers(self, serviceId):
@@ -352,46 +318,28 @@ class Solution(Problem):
         nCPUs = self.inputData.nCPUs
         nCores = self.inputData.nCores
         
-        strSolution = 'z = %10.8f;\n' % self.highestLoad
+        strSolution = 'z = %10.8f;\n' % self.cost
         
-        # Xhk: decision variable containing the assignment of threads to cores
-        # pre-fill with no assignments (all-zeros)
-        xhk = []
-        for h in xrange(0, nThreads):   # h = 0..(nThreads-1)
-            xhkEntry = [0] * nCores     # results in a vector of 0's with nCores elements
-            xhk.append(xhkEntry)
+        strSolution += 'Used buses:\n'
+        for busId in xrange(len(used)):
+            if used[busId] == 1:
+                strSolution += 'Bus(' + str(busId) + ')    '
 
-        # iterate over hash table threadIdToCoreId and fill in xhk
-        for threadId,coreId in self.threadIdToCoreId.iteritems():
-            xhk[threadId][coreId] = 1
+        strSolution += '\n\n'
+        strSolution += 'Buses assignation\n'
+        for serviceId, busId in sb:
+            strSolution += 'Service(' + str(serviceId) + ') <-> Bus(' + str(busId) + ')\n'
+    
+        strSolution += '\n\n'
+        strSolution += 'Drivers assignation\n'
+        for serviceId, driverId in sd:
+            strSolution += 'Service(' + str(serviceId) + ') <-> Driver(' + str(driverId) + ')\n'
 
-        strSolution += 'xhk = [\n'
-        for xhkEntry in xhk:
-            strSolution += '\t[ '
-            for xhkValue in xhkEntry:
-                strSolution += str(xhkValue) + ' '
-            strSolution += ']\n'
-        strSolution += '];\n'
-        
-        # Xtc: decision variable containing the assignment of tasks to CPUs
-        # pre-fill with no assignments (all-zeros)
-        xtc = []
-        for t in xrange(0, nTasks):     # t = 0..(nTasks-1)
-            xtcEntry = [0] * nCPUs      # results in a vector of 0's with nCPUs elements
-            xtc.append(xtcEntry)
-        
-        # iterate over hash table taskIdToCPUId and fill in xtc
-        for taskId,cpuId in self.taskIdToCPUId.iteritems():
-            xtc[taskId][cpuId] = 1
-        
-        strSolution += 'xtc = [\n'
-        for xtcEntry in xtc:
-            strSolution += '\t[ '
-            for xtcValue in xtcEntry:
-                strSolution += str(xtcValue) + ' '
-            strSolution += ']\n'
-        strSolution += '];\n'
-        
+        strSolution += '\n\n'
+        strSolution += 'Drivers working hours\n'
+        for driverId in xrange(self.inputData.nDrivers):
+            strSolution += 'Driver(' + str(driverId) + ') -> WBM: ' + str(self.WBM[driverId]) + ', WEM: ' + str(self.WEM[driverId]) + '\n'
+            
         return(strSolution)
 
     def saveToFile(self, filePath):

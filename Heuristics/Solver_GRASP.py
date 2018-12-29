@@ -60,6 +60,7 @@ class Solver_GRASP(Solver):
         
         # for each task taken in sorted order
         for service in sortedServices:
+            # TODO Error here
             serviceId = service.getId()
 
             # find assignments could be done in one function returning both drivers and buses lists
@@ -122,8 +123,13 @@ class Solver_GRASP(Solver):
             
             if(not solution.isFeasible()): continue
             
-            solution = localSearch.run(solution)
-            
+            # TODO recover once localsearch is implemented
+            #solution = localSearch.run(solution)
+            bestSolution = solution
+            bestCost = solution.getCost()
+            break
+
+
             solutionCost = solution.getCost()
             if(solutionCost < bestCost):
                 bestSolution = solution

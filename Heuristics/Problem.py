@@ -29,9 +29,9 @@ class Problem(object):
     def __init__(self, inputData):
         self.inputData = inputData
 
-        nBuses = self.inputData.nBuses;
-        nDrivers = self.inputData.nDrivers;
-        nServices = self.inputData.nServices;
+        nBuses = self.inputData.nBuses
+        nDrivers = self.inputData.nDrivers
+        nServices = self.inputData.nServices
 
         start = self.inputData.start
         duration = self.inputData.duration
@@ -75,40 +75,40 @@ class Problem(object):
 
         
         ######### OLD STuff #########
-        nTasks = self.inputData.nTasks
-        nThreads = self.inputData.nThreads
-        nCPUs = self.inputData.nCPUs
-        nCores = self.inputData.nCores
-        rh = self.inputData.rh
-        rc = self.inputData.rc
-        CK = self.inputData.CK
-        TH = self.inputData.TH
+        # nTasks = self.inputData.nTasks
+        # nThreads = self.inputData.nThreads
+        # nCPUs = self.inputData.nCPUs
+        # nCores = self.inputData.nCores
+        # rh = self.inputData.rh
+        # rc = self.inputData.rc
+        # CK = self.inputData.CK
+        # TH = self.inputData.TH
 
-        self.tasks = []                             # vector with tasks
-        for tId in xrange(0, nTasks):               # tId = 0..(nTasks-1)
-            task = Task(tId)
-            for hId in xrange(0, nThreads):         # hId = 0..(nThreads-1)
-                # if thread hId belongs to task tId
-                if(TH[tId][hId]):
-                    # add thread hId requiring res resources to task tId
-                    resources = rh[hId]
-                    task.addThreadAndResources(hId, resources)
-            self.tasks.append(task)
+        # self.tasks = []                             # vector with tasks
+        # for tId in xrange(0, nTasks):               # tId = 0..(nTasks-1)
+        #     task = Task(tId)
+        #     for hId in xrange(0, nThreads):         # hId = 0..(nThreads-1)
+        #         # if thread hId belongs to task tId
+        #         if(TH[tId][hId]):
+        #             # add thread hId requiring res resources to task tId
+        #             resources = rh[hId]
+        #             task.addThreadAndResources(hId, resources)
+        #     self.tasks.append(task)
 
-        self.cpus = []                              # vector with cpus
-        self.maxCapacityPerCPUId = [0] * nCPUs      # vector with max capacity of each CPU. initialized to nCPUs zeros [ 0 ... 0 ]
-        self.maxCapacityPerCoreId = [0] * nCores    # vector with max capacity of each core. initialized to nCores zeros [ 0 ... 0 ]
-        for cId in xrange(0, nCPUs):                # cId = 0..(nCPUs-1)
-            cpu = CPU(cId)
-            for kId in xrange(0, nCores):           # kId = 0..(nCores-1)
-                # if core kId belongs to CPU cId
-                if(CK[cId][kId]):
-                    # add core kId with capacity to CPU cId
-                    capacity = rc[cId]
-                    cpu.addCoreAndCapacity(kId, capacity)
-                    self.maxCapacityPerCPUId[cId] += capacity
-                    self.maxCapacityPerCoreId[kId] = capacity
-            self.cpus.append(cpu)
+        # self.cpus = []                              # vector with cpus
+        # self.maxCapacityPerCPUId = [0] * nCPUs      # vector with max capacity of each CPU. initialized to nCPUs zeros [ 0 ... 0 ]
+        # self.maxCapacityPerCoreId = [0] * nCores    # vector with max capacity of each core. initialized to nCores zeros [ 0 ... 0 ]
+        # for cId in xrange(0, nCPUs):                # cId = 0..(nCPUs-1)
+        #     cpu = CPU(cId)
+        #     for kId in xrange(0, nCores):           # kId = 0..(nCores-1)
+        #         # if core kId belongs to CPU cId
+        #         if(CK[cId][kId]):
+        #             # add core kId with capacity to CPU cId
+        #             capacity = rc[cId]
+        #             cpu.addCoreAndCapacity(kId, capacity)
+        #             self.maxCapacityPerCPUId[cId] += capacity
+        #             self.maxCapacityPerCoreId[kId] = capacity
+        #     self.cpus.append(cpu)
 
 
     ######### NEW STuff #########
@@ -130,12 +130,12 @@ class Problem(object):
 
 
 
-    ######### DELETE BELOW #########
-    def getTasks(self):
-        return(self.tasks)
+    # ######### DELETE BELOW #########
+    # def getTasks(self):
+    #     return(self.tasks)
 
-    def getCPUs(self):
-        return(self.cpus)
+    # def getCPUs(self):
+    #     return(self.cpus)
 
 
     ######### Check the instance if feasible --> return true (We don't need to implement that, our problems will be solveable) ###
