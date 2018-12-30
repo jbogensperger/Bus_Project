@@ -26,7 +26,7 @@ from Problem import Problem
 class Assignment(object):
     def __init__(self, serviceId, assignedId, cost):
         self.serviceId = serviceId
-        self.id = assignedId
+        self.assignedId = assignedId
         self.cost = cost
 
 # Solution includes functions to manage the solution, to perform feasibility
@@ -49,7 +49,7 @@ class Solution(Problem):
         self.feasible = True
         self.verbose = True
 
-        self.used = []
+        self.used = [False] * self.inputData.nBuses
         self.WBM = [0] * self.inputData.nDrivers
         self.WEM = [0] * self.inputData.nDrivers
         
@@ -59,11 +59,13 @@ class Solution(Problem):
             newCost += self.CBM * wMin
         for wMin in self.WEM:
             newCost += self.CEM * wMin
-        for service in self.services:
-            assignBus = self.sb[service.getId]
-            newCost += service.getDuration() * assignBus.getCost_min() + service.getKms() * assignBus.getCost_km() 
-        self.cost = newCost
 
+        for serviceId, busId in self.sb.iteritems():
+            assignBus = self.buses[busId]
+            service = self.services[serviceId]
+            newCost += service.getDuration() * assignBus.getCost_min() + service.getKms() * assignBus.getCost_km()
+
+        self.cost = newCost
 
     def getCost(self):
         self.updateCost()
@@ -97,7 +99,7 @@ class Solution(Problem):
         # check working minutes
         serviceDuration = self.inputData.duration[serviceId]
         WM = self.WBM[driverId] + self.WEM[driverId]
-        remainingMinutes = self.inputData.maxWorkingTime - (WM + serviceDuration)
+        remainingMinutes = self.inputData.maxWorkingTime[driverId] - (WM + serviceDuration)
 
         if remainingMinutes < 0:
             if(self.verbose): 
@@ -123,9 +125,9 @@ class Solution(Problem):
             return(False)
 
         # check max buses
-        nUsedBuses = len(filter(lambda used: used == 1, self.used))
+        nUsedBuses = len(filter(lambda used: used == True, self.used))
 
-        if nUsedBuses == self.maxBuses and self.used[busId] == 0:
+        if nUsedBuses == self.maxBuses and not self.used[busId]:
             if(self.verbose): 
                 print('Bus(%s) cannot be assigned to Service(%s): MAX number of buses already reached' % 
                 (str(busId), str(serviceId)))
@@ -178,7 +180,7 @@ class Solution(Problem):
             return(False)
 
         self.sb[serviceId] = busId
-        self.used[busId] = 1
+        self.used[busId] = True
 
         self.updateCost()
         
@@ -207,9 +209,8 @@ class Solution(Problem):
             if(self.verbose): print('Unable to unassign Bus(%s) from Service(%s): Bus(%s) is not assigned to Service(%s)' % 
                 str(busId), str(serviceId), str(busId), str(serviceId))
             return(False)
-        return(True)
 
-        if(self.used[busId] == 0):
+        if(not self.used[busId]):
             if(self.verbose): print('Unable to unassign Bus(%s) from Service(%s): Bus(%s) is not used' % 
                 str(busId), str(serviceId), str(busId))
             return(False)
@@ -217,7 +218,7 @@ class Solution(Problem):
         return(True)
 
     def unassignDriver(self, serviceId, driverId):
-        if(not self.isFeasibleToUnassignDriverFromService(taskId, cpuId)):
+        if(not self.isFeasibleToUnassignDriverFromService(serviceId, driverId)):
             if(self.verbose): 
                 print('Unable to unassign Driver(%s) from Service(%s)' % (str(driverId), str(serviceId)))
             return(False)
@@ -249,7 +250,7 @@ class Solution(Problem):
 
         busServices = [sId for sId, bId in self.sb.iteritems() if bId == busId]
         if len(busServices) == 0:
-            self.used[busId] = 0
+            self.used[busId] = False
 
         self.updateCost()
         return(True)
@@ -312,17 +313,12 @@ class Solution(Problem):
         return(bestAssignment)
     
     # TODO refactor
-    def __str__(self):  # toString equivalent
-        nTasks = self.inputData.nTasks
-        nThreads = self.inputData.nThreads
-        nCPUs = self.inputData.nCPUs
-        nCores = self.inputData.nCores
-        
+    def __str__(self):  # toString equivalent        
         strSolution = 'z = %10.8f;\n' % self.cost
         
         strSolution += 'Used buses:\n'
-        for busId in xrange(len(used)):
-            if used[busId] == 1:
+        for busId in xrange(len(self.used)):
+            if self.used[busId]:
                 strSolution += 'Bus(' + str(busId) + ')    '
 
         strSolution += '\n\n'

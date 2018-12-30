@@ -1,5 +1,5 @@
 # --- Common specific parameters ------------------------------------------------------------------------------
-inputDataFile        = data/example_3.dat;        # Input DAT file
+inputDataFile        = /home/gerard/projects/Bus_Project/Heuristics/data/example_3.dat;        # Input DAT file
 solutionFile         = solutions/example.sol; # Output DAT file (solution)
 solver               = GRASP;                 # Supported solvers: Greedy / GRASP
 maxExecTime          = 600;                   # Maximum execution time in seconds

@@ -60,7 +60,6 @@ class Solver_GRASP(Solver):
         
         # for each task taken in sorted order
         for service in sortedServices:
-            # TODO Error here
             serviceId = service.getId()
 
             # find assignments could be done in one function returning both drivers and buses lists
