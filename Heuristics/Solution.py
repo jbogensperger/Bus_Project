@@ -323,12 +323,12 @@ class Solution(Problem):
 
         strSolution += '\n\n'
         strSolution += 'Buses assignation\n'
-        for serviceId, busId in sb:
+        for serviceId, busId in self.sb.iteritems():
             strSolution += 'Service(' + str(serviceId) + ') <-> Bus(' + str(busId) + ')\n'
     
         strSolution += '\n\n'
         strSolution += 'Drivers assignation\n'
-        for serviceId, driverId in sd:
+        for serviceId, driverId in self.sd.iteritems():
             strSolution += 'Service(' + str(serviceId) + ') <-> Driver(' + str(driverId) + ')\n'
 
         strSolution += '\n\n'

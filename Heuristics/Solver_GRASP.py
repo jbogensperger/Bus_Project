@@ -147,7 +147,8 @@ class Solver_GRASP(Solver):
         print '  Total Eval. Time     ', total_elapsedEvalTime, 's'
         print '  Avg. Time / Candidate', avg_evalTimePerCandidate, 'ms'
         
-        localSearch.printPerformance()
+        # TODO uncoment line once local search is implemented
+        #localSearch.printPerformance()
         
         return(bestSolution)
 
