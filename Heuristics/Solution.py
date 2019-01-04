@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-import copy, time
+import copy, time, math
 from Problem import Problem
 
 
@@ -322,6 +322,8 @@ class Solution(Problem):
     
     def __str__(self):  # toString equivalent        
         strSolution = 'z = %10.8f;\n' % self.cost
+
+        strSolution += '\n\n' + self.graphs() + '\n\n'
         
         strSolution += 'Used buses:\n'
         for busId in xrange(len(self.used)):
@@ -344,6 +346,77 @@ class Solution(Problem):
             strSolution += 'Driver(' + str(driverId) + ') -> WBM: ' + str(self.WBM[driverId]) + ', WEM: ' + str(self.WEM[driverId]) + '\n'
             
         return(strSolution)
+
+    def graphs(self):
+        graphs = ''
+        graphs += 'Services:\n'
+
+        for service in self.services:
+            serviceId = service.getId()
+
+            startHour = math.floor(self.inputData.start[serviceId] / 60)
+            endHour = math.floor((self.inputData.start[serviceId] + self.inputData.duration[serviceId]) / 60)
+
+            h = 0
+            while h < 24:
+                if (startHour <= h and h <= endHour):
+                    graphs += self.num(serviceId) + ' '
+                else:
+                    graphs += '--' + ' '
+                
+                
+                h += 1
+            
+            graphs += '\n'
+
+        graphs += '\n\nDrivers:\n'
+
+        for service in self.services:
+            serviceId = service.getId()
+            driverId = self.sd[serviceId]
+
+            startHour = math.floor(self.inputData.start[serviceId] / 60)
+            endHour = math.floor((self.inputData.start[serviceId] + self.inputData.duration[serviceId]) / 60)
+
+            h = 0
+            while h < 24:
+                if (startHour <= h and h <= endHour):
+                    graphs += self.num(driverId) + ' '
+                else:
+                    graphs += '--' + ' '
+                h += 1                
+
+            graphs += '\n'            
+
+        graphs += '\n\nBuses:\n'            
+
+        for service in self.services:
+            serviceId = service.getId()
+            busId = self.sb[serviceId]
+
+            startHour = math.floor(self.inputData.start[serviceId] / 60)
+            endHour = math.floor((self.inputData.start[serviceId] + self.inputData.duration[serviceId]) / 60)
+            
+            h = 0
+            while h < 24:
+                if (startHour <= h and h <= endHour):
+                    graphs += self.num(busId) + ' '
+                else:
+                    graphs += '--' + ' '
+                h += 1                
+
+            graphs += '\n'
+
+        return(graphs)            
+
+    def num(self, num):
+        if num is None:
+            return ('  ')
+
+        if num < 10:
+            return (' ' + str(num))
+        
+        return (str(num))
 
     def saveToFile(self, filePath):
         f = open(filePath, 'w')
