@@ -70,8 +70,10 @@ class Problem(object):
             for s2 in xrange(0, nServices):
                 if self.services[s1].getStart() < (self.services[s2].getStart() + self.services[s1].getDuration()) and (self.services[s1].getStart() + self.services[s1].getDuration()) > self.services[s2].getStart():
                     self.overlapping[s1][s2] = 1
+                    self.overlapping[s2][s1] = 1
                 else:
                     self.overlapping[s1][s2] = 0
+                    self.overlapping[s2][s1] = 0
 
         
         ######### OLD STuff #########
