@@ -24,10 +24,10 @@ import copy, time
 # A new solution can be created based on an existing solution and a list of
 # changes can be created using the createNeighborSolution(solution, changes) function.
 class Change(object):
-    def __init__(self, taskId, curCPUId, newCPUId):
-        self.taskId = taskId
-        self.curCPUId = curCPUId
-        self.newCPUId = newCPUId
+    def __init__(self, serviceId, curAssignedId, newAssignedId):
+        self.serviceId = serviceId
+        self.curAssignedId = curAssignedId
+        self.newAssignedId = newAssignedId
 
 # Implementation of a local search using two neighborhoods and two different policies.
 class LocalSearch(object):
@@ -39,127 +39,132 @@ class LocalSearch(object):
         self.elapsedTime = 0
         self.iterations = 0
 
-    def createNeighborSolution(self, solution, changes):
-        # unassign the tasks specified in changes
-        # and reassign them to the new CPUs
-        
+    def createNeighborSolution_drivers(self, solution, changes):        
         newSolution = copy.deepcopy(solution)
         
         for change in changes:
-            newSolution.unassign(change.taskId, change.curCPUId)
+            newSolution.unassignDriver(change.serviceId, change.curAssignedId)
         
         for change in changes:
-            feasible = newSolution.assign(change.taskId, change.newCPUId)
+            feasible = newSolution.assignDriver(change.serviceId, change.newAssignedId)
             if(not feasible): return(None)
         
         return(newSolution)
-    
-    
-    def evaluateNeighbor(self, solution, changes):
-        newAvailCapPerCPUId = copy.deepcopy(solution.availCapacityPerCPUId)
-        newAvailCapPerCoreId = copy.deepcopy(solution.availCapacityPerCoreId)
 
-        for change in changes:
-            taskId = change.taskId
-            task = solution.tasks[taskId]
-            taskThreadIds = task.getThreadIds()
-            
-            curCPUId = change.curCPUId
-            
-            for threadId in taskThreadIds:
-                resources = task.getResourcesByThread(threadId)
-                coreId = solution.getCoreIdAssignedToThreadId(threadId)
-                newAvailCapPerCoreId[coreId] += resources
-                newAvailCapPerCPUId[curCPUId] += resources
-
-        for change in changes:
-            taskId = change.taskId
-            task = solution.tasks[taskId]
-            taskThreadIds = task.getThreadIds()
-            
-            newCPUId = change.newCPUId
-            cpu = solution.cpus[newCPUId]
-            cpuCoreIds = cpu.getCoreIds()
-            
-            for threadId in taskThreadIds:
-                resources = task.getResourcesByThread(threadId)
-                selectedCoreId = None
-                selectedCoreAvailCap = 0
-                for coreId in cpuCoreIds:
-                    coreAvailCap = newAvailCapPerCoreId[coreId]
-                    if((coreAvailCap >= resources) and (coreAvailCap > selectedCoreAvailCap)):
-                        selectedCoreId = coreId
-                        selectedCoreAvailCap = coreAvailCap
-                
-                if(selectedCoreId is None):
-                    return(float('infinity'))
-                
-                newAvailCapPerCoreId[selectedCoreId] -= resources
-                newAvailCapPerCPUId[newCPUId] -= resources
-
-        highestLoad = 0.0
-        for cpu in solution.cpus:
-            cpuId = cpu.getId()
-            totalCapacity = cpu.getTotalCapacity()
-            availableCapacity = newAvailCapPerCPUId[cpuId]
-            highestLoad = max(highestLoad, (totalCapacity - availableCapacity) / totalCapacity)
-            
-        return(highestLoad)
-    
-    def getAssignmentsSortedByCPULoad(self, solution):
-        tasks = solution.getTasks()
-        cpus = solution.getCPUs()
+    def createNeighborSolution_buses(self, solution, changes):
+        newSolution = copy.deepcopy(solution)
         
-        # create vector of task assignments.
-        # Each element is a tuple <task, cpu> 
+        for change in changes:
+            newSolution.unassignBus(change.serviceId, change.curAssignedId)
+        
+        for change in changes:
+            feasible = newSolution.assignBus(change.serviceId, change.newAssignedId)
+            if(not feasible): return(None)
+        
+        return(newSolution)
+
+    def evaluateNeighbor_drivers(self, solution, changes):
+        newSolution = copy.deepcopy(solution)
+        
+        for change in changes:
+            newSolution.unassignDriver(change.serviceId, change.curAssignedId)
+        
+        for change in changes:
+            feasible = newSolution.assignDriver(change.serviceId, change.newAssignedId)
+            if(not feasible): return(float('infinity'))
+        
+        return(newSolution.getCost())
+
+    def evaluateNeighbor_buses(self, solution, changes):
+        newSolution = copy.deepcopy(solution)
+        
+        for change in changes:
+            newSolution.unassignBus(change.serviceId, change.curAssignedId)
+        
+        for change in changes:
+            feasible = newSolution.assignBus(change.serviceId, change.newAssignedId)
+            if(not feasible): return(float('infinity'))
+        
+        return(newSolution.getCost())
+
+    def getBusAssignmentsSortedByBusCost(self, solution):
+        services = solution.getServices()
+        buses = solution.getBuses()
+
+        # create vector of service assignments.
+        # Each element is a tuple <service, bus> 
         assignments = []
-        for task in tasks:
-            taskId = task.getId()
-            cpuId = solution.getCPUIdAssignedToTaskId(taskId)
-            cpu = cpus[cpuId]
-            highestLoad = solution.loadPerCPUId[cpuId]
-            assignment = (task, cpu, highestLoad)
+        for service in services:
+            serviceId = service.getId()
+            busId = solution.getBusAssignedToService(serviceId)
+            bus = buses[busId]
+
+            busCost = bus.getCost_km() + bus.getCost_min()
+            assignment = (service, bus, busCost)
             assignments.append(assignment)
 
-        # For best improvement policy it does not make sense to sort the tasks since all of them must be explored.
-        # However, for first improvement, we can start by the tasks assigned to the more loaded CPUs.
+        # For best improvement policy it does not make sense to sort the services since all of them must be explored.
+        # However, for first improvement, we can start by the services assigned to the more currently expensive drivers.
         if(self.policy == 'BestImprovement'): return(assignments)
         
-        # Sort task assignments by the load of the assigned CPU in descending order.
+        # Sort services assignments by the current price of the assigned driver in descending order.
+        sorted_assignments = sorted(assignments, key=lambda assignment:assignment[2], reverse=True)
+        return(sorted_assignments)
+
+    def getDriverAssignmentsSortedByDriverCost(self, solution):
+        services = solution.getServices()
+        drivers = solution.getDrivers()
+
+        # create vector of service assignments.
+        # Each element is a tuple <service, driver> 
+        assignments = []
+        for service in services:
+            serviceId = service.getId()
+            driverId = solution.getDriverAssignedToService(serviceId)
+            driver = drivers[driverId]
+
+            driverCost = solution.WBM[driverId] * solution.CBM + solution.WEM[driverId] * solution.CEM
+            assignment = (service, driver, driverCost)
+            assignments.append(assignment)
+
+        # For best improvement policy it does not make sense to sort the services since all of them must be explored.
+        # However, for first improvement, we can start by the services assigned to the more currently expensive drivers.
+        if(self.policy == 'BestImprovement'): return(assignments)
+        
+        # Sort services assignments by the current price of the assigned driver in descending order.
         sorted_assignments = sorted(assignments, key=lambda assignment:assignment[2], reverse=True)
         return(sorted_assignments)
     
-    def exploreNeighborhood(self, solution):
-        cpus = solution.getCPUs()
-        
-        curHighestLoad = solution.getHighestLoad()
+    def exploreNeighborhood_drivers(self, solution):        
+        curCost = solution.getCost()
         bestNeighbor = solution
         
         if(self.nhStrategy == 'Reassignment'):
-            sortedAssignments = self.getAssignmentsSortedByCPULoad(solution)
+            drivers = solution.getDrivers()
+            driverSortedAssignments = self.getDriverAssignmentsSortedByDriverCost(solution)
+
+            for assignment in driverSortedAssignments:
+                service = assignment[0]
+                serviceId = service.getId()
                 
-            for assignment in sortedAssignments:
-                task = assignment[0]
-                taskId = task.getId()
+                curDriver = assignment[1]
+                curDriverId = curDriver.getId()
                 
-                curCPU = assignment[1]
-                curCPUId = curCPU.getId()
-                
-                for cpu in cpus:
-                    newCPUId = cpu.getId()
-                    if(newCPUId == curCPUId): continue
+                for driver in drivers:
+                    newDriverId = driver.getId()
+                    if(newDriverId == curDriverId): continue
                     
                     changes = []
-                    changes.append(Change(taskId, curCPUId, newCPUId))
-                    neighborHighestLoad = self.evaluateNeighbor(solution, changes)
-                    if(curHighestLoad > neighborHighestLoad):
-                        neighbor = self.createNeighborSolution(solution, changes)
+                    changes.append(Change(serviceId, curDriverId, newDriverId))
+                    neighborCost = self.evaluateNeighbor_drivers(solution, changes)
+                    if(curCost > neighborCost):
+                        neighbor = self.createNeighborSolution_drivers(solution, changes)
                         if(neighbor is None): continue
                         if(self.policy == 'FirstImprovement'):
                             return(neighbor)
                         else:
                             bestNeighbor = neighbor
-                            curHighestLoad = neighborHighestLoad
+                            curCost = neighborCost
                             
         elif(self.nhStrategy == 'Exchange'):
             # For the Exchange neighborhood and first improvement policy, try exchanging
@@ -167,56 +172,137 @@ class LocalSearch(object):
             # CPU. It can be done by picking task1 from begin to end of sortedAssignments,
             # and task2 from end to begin.
             
-            sortedAssignments = self.getAssignmentsSortedByCPULoad(solution)
+            sortedAssignments = self.getDriverAssignmentsSortedByDriverCost(solution)
             numAssignments = len(sortedAssignments)
             
             for i in xrange(0, numAssignments):             # i = 0..(numAssignments-1)
                 assignment1 = sortedAssignments[i]
                 
-                task1 = assignment1[0]
-                taskId1 = task1.getId()
+                service1 = assignment1[0]
+                serivceId1 = service1.getId()
                 
-                curCPU1 = assignment1[1]
-                curCPUId1 = curCPU1.getId()
+                curDriver1 = assignment1[1]
+                curDriverId1 = curDriver1.getId()
                 
                 for j in xrange(numAssignments-1, -1, -1):  # j = (numAssignments-1)..0
                     if(i >= j): continue # avoid duplicate explorations and exchange with itself. 
                     
                     assignment2 = sortedAssignments[j]
                     
-                    task2 = assignment2[0]
-                    taskId2 = task2.getId()
+                    service2 = assignment2[0]
+                    serviceId2 = service2.getId()
                     
-                    curCPU2 = assignment2[1]
-                    curCPUId2 = curCPU2.getId()
+                    curDriver2 = assignment2[1]
+                    curDriverId2 = curDriver2.getId()
 
                     # avoid exploring pairs of tasks assigned to the same CPU
-                    if(curCPUId1 == curCPUId2): continue
+                    if(curDriverId1 == curDriverId2): continue
                     
                     changes = []
-                    changes.append(Change(taskId1, curCPUId1, curCPUId2))
-                    changes.append(Change(taskId2, curCPUId2, curCPUId1))
-                    neighborHighestLoad = self.evaluateNeighbor(solution, changes)
-                    if(curHighestLoad > neighborHighestLoad):
-                        neighbor = self.createNeighborSolution(solution, changes)
+                    changes.append(Change(serivceId1, curDriverId1, curDriverId2))
+                    changes.append(Change(serviceId2, curDriverId2, curDriverId1))
+                    neighborCost = self.evaluateNeighbor_drivers(solution, changes)
+                    if(curCost > neighborCost):
+                        neighbor = self.createNeighborSolution_drivers(solution, changes)
                         if(neighbor is None): continue
                         if(self.policy == 'FirstImprovement'):
                             return(neighbor)
                         else:
                             bestNeighbor = neighbor
-                            curHighestLoad = neighborHighestLoad
+                            curCost = neighborCost
             
         else:
             raise Exception('Unsupported NeighborhoodStrategy(%s)' % self.nhStrategy)
         
         return(bestNeighbor)
     
+    def exploreNeighborhood_buses(self, solution):        
+        curCost = solution.getCost()
+        bestNeighbor = solution
+        
+        if(self.nhStrategy == 'Reassignment'):
+            buses = solution.getBuses()
+            busSortedAssignments = self.getBusAssignmentsSortedByBusCost(solution)
+
+            for assignment in busSortedAssignments:
+                service = assignment[0]
+                serviceId = service.getId()
+                
+                curBus = assignment[1]
+                curBusId = curBus.getId()
+                
+                for bus in buses:
+                    newBusId = bus.getId()
+                    if(newBusId == curBusId): continue
+                    
+                    changes = []
+                    changes.append(Change(serviceId, curBusId, newBusId))
+                    neighborCost = self.evaluateNeighbor_buses(solution, changes)
+                    if(curCost > neighborCost):
+                        neighbor = self.createNeighborSolution_buses(solution, changes)
+                        if(neighbor is None): continue
+                        if(self.policy == 'FirstImprovement'):
+                            return(neighbor)
+                        else:
+                            bestNeighbor = neighbor
+                            curCost = neighborCost
+                            
+        elif(self.nhStrategy == 'Exchange'):
+            # For the Exchange neighborhood and first improvement policy, try exchanging
+            # tasks two tasks, one from highly loaded CPU and the other from lowly loaded
+            # CPU. It can be done by picking task1 from begin to end of sortedAssignments,
+            # and task2 from end to begin.
+            
+            sortedAssignments = self.getDriverAssignmentsSortedByDriverCost(solution)
+            numAssignments = len(sortedAssignments)
+            
+            for i in xrange(0, numAssignments):             # i = 0..(numAssignments-1)
+                assignment1 = sortedAssignments[i]
+                
+                service1 = assignment1[0]
+                serivceId1 = service1.getId()
+                
+                curBus1 = assignment1[1]
+                curBusId1 = curBus1.getId()
+                
+                for j in xrange(numAssignments-1, -1, -1):  # j = (numAssignments-1)..0
+                    if(i >= j): continue # avoid duplicate explorations and exchange with itself. 
+                    
+                    assignment2 = sortedAssignments[j]
+                    
+                    service2 = assignment2[0]
+                    serviceId2 = service2.getId()
+                    
+                    curBus2 = assignment2[1]
+                    curBusId2 = curBus2.getId()
+
+                    # avoid exploring pairs of tasks assigned to the same CPU
+                    if(curBusId1 == curBusId2): continue
+                    
+                    changes = []
+                    changes.append(Change(serivceId1, curBusId1, curBusId2))
+                    changes.append(Change(serviceId2, curBusId2, curBusId1))
+                    neighborCost = self.evaluateNeighbor_buses(solution, changes)
+                    if(curCost > neighborCost):
+                        neighbor = self.createNeighborSolution_buses(solution, changes)
+                        if(neighbor is None): continue
+                        if(self.policy == 'FirstImprovement'):
+                            return(neighbor)
+                        else:
+                            bestNeighbor = neighbor
+                            curCost = neighborCost
+            
+        else:
+            raise Exception('Unsupported NeighborhoodStrategy(%s)' % self.nhStrategy)
+        
+        return(bestNeighbor)
+
     def run(self, solution):
         if(not self.enabled): return(solution)
         if(not solution.isFeasible()): return(solution)
 
         bestSolution = solution
-        bestHighestLoad = bestSolution.getHighestLoad()
+        bestCost = bestSolution.getCost()
         
         startEvalTime = time.time()
         iterations = 0
@@ -227,11 +313,18 @@ class LocalSearch(object):
             keepIterating = False
             iterations += 1
             
-            neighbor = self.exploreNeighborhood(bestSolution)
-            curHighestLoad = neighbor.getHighestLoad()
-            if(bestHighestLoad > curHighestLoad):
+            neighbor_driver = self.exploreNeighborhood_drivers(bestSolution)
+            neighbor_bus = self.exploreNeighborhood_buses(bestSolution)
+
+            if (neighbor_driver.getCost() < neighbor_bus.getCost()):
+                neighbor = neighbor_driver
+            else:
+                neighbor = neighbor_bus
+
+            curBestCost = neighbor.getCost()
+            if(bestCost > curBestCost):
                 bestSolution = neighbor
-                bestHighestLoad = curHighestLoad
+                bestCost = curBestCost
                 keepIterating = True
         
         self.iterations += iterations

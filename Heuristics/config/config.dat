@@ -1,7 +1,7 @@
 # --- Common specific parameters ------------------------------------------------------------------------------
-inputDataFile        = data/Size3/Size3Example.dat;        # Input DAT file
+inputDataFile        = ../InstanceGenerator/instances/example_0.dat;        # Input DAT file
 solutionFile         = solutions/example.sol; # Output DAT file (solution)
-solver               = Greedy;                 # Supported solvers: Greedy / GRASP
+solver               = GRASP;                 # Supported solvers: Greedy / GRASP
 maxExecTime          = 600;                   # Maximum execution time in seconds
 
 # --- Greedy specific parameters ------------------------------------------------------------------------------
@@ -13,7 +13,7 @@ alpha                = 0.2;                   # Alpha parameter for the GRASP so
 
 # --- Local Search specific parameters ------------------------------------------------------------------------
 # Ignored if solver is not Greedy or GRASP.
-localSearch          = True;                  # Enable local search?
+localSearch          = False;                  # Enable local search?
 neighborhoodStrategy = Reassignment;              # Supported Neighborhoods: Reassignment / Exchange
 policy               = FirstImprovement;       # Supported Policies: BestImprovement / FirstImprovement
 
