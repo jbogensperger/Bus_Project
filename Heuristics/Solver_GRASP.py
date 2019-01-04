@@ -103,7 +103,7 @@ class Solver_GRASP(Solver):
         total_elapsedEvalTime = 0
         total_evaluatedCandidates = 0
         
-        #localSearch = LocalSearch(config) ## TODO ADD LOCALSEARCH HERE..
+        localSearch = LocalSearch(config)
 
         iteration = 0
         while(time.time() - self.startTime < config.maxExecTime):
@@ -122,12 +122,7 @@ class Solver_GRASP(Solver):
             
             if(not solution.isFeasible()): continue
             
-            # TODO recover once localsearch is implemented
-            #solution = localSearch.run(solution)
-            bestSolution = solution
-            bestCost = solution.getCost()
-            break
-
+            solution = localSearch.run(solution)
 
             solutionCost = solution.getCost()
             if(solutionCost < bestCost):
@@ -147,8 +142,7 @@ class Solver_GRASP(Solver):
         print '  Total Eval. Time     ', total_elapsedEvalTime, 's'
         print '  Avg. Time / Candidate', avg_evalTimePerCandidate, 'ms'
         
-        # TODO uncoment line once local search is implemented
-        #localSearch.printPerformance()
+        localSearch.printPerformance()
         
         return(bestSolution)
 

@@ -68,8 +68,16 @@ class Solution(Problem):
         self.cost = newCost
 
     def getCost(self):
-        self.updateCost()
         return (self.cost)
+
+    def getServices(self):
+        return (self.services)
+
+    def getDrivers(self):
+        return (self.drivers)
+
+    def getBuses(self):
+        return (self.buses)
         
     def setVerbose(self, verbose):
         if(not isinstance(verbose, (bool)) or (verbose not in [True, False])):
@@ -312,7 +320,6 @@ class Solution(Problem):
             
         return(bestAssignment)
     
-    # TODO refactor
     def __str__(self):  # toString equivalent        
         strSolution = 'z = %10.8f;\n' % self.cost
         

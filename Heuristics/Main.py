@@ -43,8 +43,6 @@ def run():
         
         print 'Reading Input Data file %s...' % config.inputDataFile
         inputData = DATParser.parse(config.inputDataFile)
-        # TODO validate input data ?
-        #ValidateInputData.validate(inputData)
         
         print 'Creating Problem...'
         problem = Problem(inputData)
