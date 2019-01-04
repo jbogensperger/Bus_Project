@@ -182,7 +182,7 @@ class LocalSearch(object):
                 serivceId1 = service1.getId()
                 
                 curDriver1 = assignment1[1]
-                curBusId1 = curDriver1.getId()
+                curDriverId1 = curDriver1.getId()
                 
                 for j in xrange(numAssignments-1, -1, -1):  # j = (numAssignments-1)..0
                     if(i >= j): continue # avoid duplicate explorations and exchange with itself. 
