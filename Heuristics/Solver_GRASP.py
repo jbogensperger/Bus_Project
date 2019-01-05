@@ -53,7 +53,7 @@ class Solver_GRASP(Solver):
         
         # get tasks and sort them by their total required resources in descending order
         services = problem.getServices()
-        sortedServices = services #sorted(services, key=lambda service: service.getTotalResources(), reverse=True)
+        sortedServices = sorted(services, key=lambda service: service.getDuration(), reverse=True)
 
         iteration_elapsedEvalTime = 0
         iteration_evaluatedCandidates = 0
