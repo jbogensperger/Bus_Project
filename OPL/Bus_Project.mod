@@ -110,7 +110,7 @@
 	}
 	
 	forall(d in D){ // Overime allowed or not..
-		WBM[d] == BM * overtime[d];
+		WBM[d] >= BM * overtime[d];
 		WEM[d] <= (maxWorkingTime[d] - BM) * overtime[d];
 	}
 	
