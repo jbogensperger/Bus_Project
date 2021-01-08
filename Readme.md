@@ -1,3 +1,6 @@
+# Bus Project
+This is an course Project of UPC Barcelona course Algorithmic and Mathematical Models. It contains an ILP optimization and its equivalent in custom python script using meta-heuristics.
+
 # How to solve instances from linux terminal
 
 Assuming `/opt/ibm/ILOG/CPLEX_Studio126/` as the installation directory of CPLEX Studio.
